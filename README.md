@@ -5,10 +5,11 @@ GPlayCli is a command line tool to search, install, update Android applications 
 
 
 	$ gplaycli --help
-	usage: gplaycli [-h] [-V] [-y] [-l FOLDER] [-s SEARCH] [-P] [-n NUMBER]
-	                [-d AppID [AppID ...]] [-F FILE] [-u FOLDER] [-f FOLDER]
-	                [-dc DEVICE_CODENAME] [-t] [-tu TOKEN_URL] [-v] [-c CONF_FILE]
-	                [-p] [-L] [-ic]
+	usage: gplaycli [-h] [-V] [-y] [-l FOLDER] [-lc] [-b BROWSE_STRING]
+                	[-s SEARCH] [-P] [-n NUMBER] [-d AppID [AppID ...]] [-a]
+                	[-F FILE] [-u FOLDER] [-f FOLDER] [-dc DEVICE_CODENAME]
+                	[-ts TOKEN_STR] [-g GSF_ID] [-t] [-tu TOKEN_URL] [-v]
+                	[-c CONF_FILE] [-p] [-L] [-lo LOCALE] [-tz TIMEZONE]
 
 	A Google Play Store Apk downloader and manager for command line
 
@@ -18,6 +19,10 @@ GPlayCli is a command line tool to search, install, update Android applications 
 	  -y, --yes             Say yes to all prompted questions
 	  -l FOLDER, --list FOLDER
 	                        List APKS in the given folder, with details
+	  -lc, --list-categories
+                        	List existing categories in Google Play Store
+  	  -b BROWSE_STRING, --browse BROWSE_STRING
+                        	Browse category in Google Play Store
 	  -s SEARCH, --search SEARCH
 	                        Search the given string in Google Play Store
 	  -P, --paid            Also search for paid apps
@@ -26,6 +31,8 @@ GPlayCli is a command line tool to search, install, update Android applications 
 	                        matching applications
 	  -d AppID [AppID ...], --download AppID [AppID ...]
 	                        Download the Apps that map given AppIDs
+	  -a, --additional-files
+                        	Enable the download of additional files
 	  -F FILE, --file FILE  Load packages to download from file, one package per
 	                        line
 	  -u FOLDER, --update FOLDER
@@ -34,6 +41,12 @@ GPlayCli is a command line tool to search, install, update Android applications 
 	                        Where to put the downloaded Apks, only for -d command
 	  -dc DEVICE_CODENAME, --device-codename DEVICE_CODENAME
 	                        The device codename to fake
+	  -ts TOKEN_STR, --token-str TOKEN_STR
+                        	Supply token string by yourself, need to supply GSF_ID
+                        	at the same time
+  	  -g GSF_ID, --gsf-id GSF_ID
+                        	Supply GSF_ID by yourself, need to supply token string
+                        	at the same time
 	  -t, --token           Instead of classical credentials, use the tokenize
 	                        version
 	  -tu TOKEN_URL, --token-url TOKEN_URL
@@ -45,9 +58,10 @@ GPlayCli is a command line tool to search, install, update Android applications 
 	  -L, --log             Enable logging of apps status. Downloaded, failed, not
 	                        available apps will be written in separate logging
 	                        files
-	  -ic, --install-cronjob
-	                        Install cronjob for regular APKs update. Use --yes to
-	                        automatically install to default locations
+	  -lo LOCALE, --locale LOCALE
+                        	The locale to use. Ex: en_GB
+	  -tz TIMEZONE, --timezone TIMEZONE
+                        	The timezone to use. Ex: CEST
 
 Changelog
 =========

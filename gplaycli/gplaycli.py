@@ -15,6 +15,7 @@ details.
 You should have received a copy of the GNU Affero General Public License along with this program.  If not,
 see <http://www.gnu.org/licenses/>.
 """
+import json
 
 import sys
 import os
@@ -296,6 +297,135 @@ class GPlaycli:
 		return to_download_items - failed_items
 
 	@hooks.connected
+	def list_categories(self, include_headers=True):
+		"""
+		List categories on the Play Store.
+
+		include_headers -- True if the result table should show column names
+		"""
+		try:
+			results = self.api.browse()
+		except IndexError:
+			results = []
+		if not results:
+			logger.info("No result")
+			return
+		all_results = []
+		if include_headers:
+			# Name of the columns
+			col_names = ["Category",
+						 "CatID"
+						 ]
+			all_results.append(col_names)
+		# Compute results values
+		for result in results:
+			detail = [result['name'],
+					  result['catId']
+					  ]
+			all_results.append(detail)
+			
+		if self.verbose:
+			# Print a nice table
+			col_width = []
+			for column_indice in range(len(all_results[0])):
+				col_length = max([len("%s" % row[column_indice]) for row in all_results])
+				col_width.append(col_length + 2)
+
+			for result in all_results:
+				for indice, item in enumerate(result):
+					out = str(item)
+					out = out.strip()
+					out = out.ljust(col_width[indice])
+					out = "".join(out)
+					try:
+						print(out, end='')
+					except UnicodeEncodeError:
+						out = out.encode('utf-8', errors='replace')
+						print(out, end='')
+				print()
+		return all_results
+
+	@hooks.connected
+	def browse(self, category, nb_results=None, free_only=True, include_headers=True):
+		"""
+		Browse categories on the Play Store.
+
+		category        -- the category to browse on the Play Store
+		nb_results      -- the number of results to print
+		free_only       -- True if only costless apps should be searched for
+		include_headers -- True if the result table should show column names
+		"""
+		try:
+			results = self.api.browse(category)
+		except IndexError:
+			results = []
+		if not results:
+			logger.info("No result")
+			return
+		all_results = []
+		if include_headers:
+			# Name of the columns
+			col_names = ["Title",
+						 "Creator",
+						 "Size",
+						 "Downloads",
+						 "Last Update",
+						 "AppID",
+						 "Version",
+						 "Rating",
+						 "Category"
+						 ]
+			all_results.append(col_names)
+		# Compute results values
+		for result in results:
+			if result['docid'] == "apps_topselling_paid" and free_only:
+				continue
+			for app in result['apps']:
+				# skip that app if it not free
+				# or if it's beta (pre-registration)
+				# print(json.dumps(result, ensure_ascii=False, indent=4))
+				if (len(app['offer']) == 0  # beta apps (pre-registration)
+						or free_only
+						and app['offer'][0]['checkoutFlowRequired']  # not free to download
+					):
+					continue
+				detail = [app['title'],
+						app['author'],
+						util.sizeof_fmt(app['installationSize']) if app['installationSize'] > 0 else 'N/A',
+						app['numDownloads'],
+						app['uploadDate'],
+						app['docId'],
+						app['versionCode'],
+						"%.2f" % app["aggregateRating"]["starRating"],
+						app["category"]["appType"] if app["category"]["appType"] == "GAME" else app["category"]["appCategory"]
+						]
+				if len(all_results) < int(nb_results) + 1:
+					all_results.append(detail)
+				else:
+					break
+
+		if self.verbose:
+			# Print a nice table
+			col_width = []
+			for column_indice in range(len(all_results[0])):
+				col_length = max([len("%s" % row[column_indice]) for row in all_results])
+				col_width.append(col_length + 2)
+
+			for result in all_results:
+				for indice, item in enumerate(result):
+					out = str(item)
+					out = out.strip()
+					out = out.ljust(col_width[indice])
+					out = "".join(out)
+					try:
+						print(out, end='')
+					except UnicodeEncodeError:
+						out = out.encode('utf-8', errors='replace')
+						print(out, end='')
+				print()
+		return all_results
+
+	@hooks.connected
 	def search(self, search_string, nb_results, free_only=True, include_headers=True):
 		"""
 		Search the given string search_string on the Play Store.
@@ -322,7 +452,8 @@ class GPlaycli:
 						 "Last Update",
 						 "AppID",
 						 "Version",
-						 "Rating"
+						 "Rating",
+						 "Category"
 						 ]
 			all_results.append(col_names)
 		# Compute results values
@@ -341,7 +472,8 @@ class GPlaycli:
 					  result['uploadDate'],
 					  result['docId'],
 					  result['versionCode'],
-					  "%.2f" % result["aggregateRating"]["starRating"]
+					  "%.2f" % result["aggregateRating"]["starRating"],
+					  result["category"]["appType"] if result["category"]["appType"] == "GAME" else result["category"]["appCategory"]
 					  ]
 			if len(all_results) < int(nb_results) + 1:
 				all_results.append(detail)
@@ -608,6 +740,10 @@ def main():
 	parser.add_argument('-l', '--list', action='store', dest='list', metavar="FOLDER",
 						type=str,
 						help="List APKS in the given folder, with details")
+	parser.add_argument('-lc', '--list-categories', action='store_true', dest='list_categories',
+						help="List existing categories in Google Play Store")
+	parser.add_argument('-b', '--browse', action='store', dest='browse_string', type=str,
+						help="Browse category in Google Play Store")
 	parser.add_argument('-s', '--search', action='store', dest='search_string', metavar="SEARCH",
 						type=str,
 						help="Search the given string in Google Play Store")
@@ -615,7 +751,7 @@ def main():
 						default=False,
 						help="Also search for paid apps")
 	parser.add_argument('-n', '--number', action='store', dest='number_results',
-						metavar="NUMBER", type=int,
+						metavar="NUMBER", type=int, default=10,
 						help="For the search option, returns the given "
 							 "number of matching applications")
 	parser.add_argument('-d', '--download', action='store', dest='packages_to_download',
@@ -686,12 +822,17 @@ def main():
 	if args.update_folder:
 		cli.prepare_analyse_apks()
 
+	if args.list_categories:
+		cli.verbose = True
+		cli.list_categories()
+
+	if args.browse_string:
+		cli.verbose = True
+		cli.browse(args.browse_string, args.number_results, not args.paid)
+
 	if args.search_string:
 		cli.verbose = True
-		nb_results = 10
-		if args.number_results:
-			nb_results = args.number_results
-		cli.search(args.search_string, nb_results, not args.paid)
+		cli.search(args.search_string, args.number_results, not args.paid)
 
 	if args.load_from_file:
 		args.packages_to_download = util.load_from_file(args.load_from_file)
