@@ -15,7 +15,6 @@ details.
 You should have received a copy of the GNU Affero General Public License along with this program.  If not,
 see <http://www.gnu.org/licenses/>.
 """
-import json
 
 import sys
 import os
@@ -399,7 +398,7 @@ class GPlaycli:
 						"%.2f" % app["aggregateRating"]["starRating"],
 						app["category"]["appType"] if app["category"]["appType"] == "GAME" else app["category"]["appCategory"]
 						]
-				if len(all_results) < int(nb_results) + 1:
+				if len(all_results) < int(nb_results) + (1 if include_headers else 0):
 					all_results.append(detail)
 				else:
 					break
@@ -475,7 +474,7 @@ class GPlaycli:
 					  "%.2f" % result["aggregateRating"]["starRating"],
 					  result["category"]["appType"] if result["category"]["appType"] == "GAME" else result["category"]["appCategory"]
 					  ]
-			if len(all_results) < int(nb_results) + 1:
+			if len(all_results) < int(nb_results) + (1 if include_headers else 0):
 				all_results.append(detail)
 
 		if self.verbose:
